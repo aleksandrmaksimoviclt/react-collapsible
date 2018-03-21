@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
-class Collapsible extends Component {
+class Collapsible extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     // Bind class methods
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
@@ -20,7 +20,7 @@ class Collapsible extends Component {
         hasBeenOpened: true,
         overflow: props.overflowWhenOpen,
         inTransition: false,
-      }
+      };
     } else {
       this.state = {
         isClosed: true,
@@ -30,12 +30,12 @@ class Collapsible extends Component {
         hasBeenOpened: false,
         overflow: 'hidden',
         inTransition: false,
-      }
+      };
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if(this.state.shouldOpenOnNextCycle){
+    if (this.state.shouldOpenOnNextCycle) {
       this.continueOpenCollapsible();
     }
 
@@ -47,12 +47,12 @@ class Collapsible extends Component {
           isClosed: true,
           shouldSwitchAutoOnNextCycle: false,
         });
-      }, 50);
+      }, 0);
     }
 
     // If there has been a change in the open prop (controlled by accordion)
     if (prevProps.open !== this.props.open) {
-      if(this.props.open === true) {
+      if (this.props.open === true) {
         this.openCollapsible();
         this.props.onOpening();
       } else {
@@ -65,7 +65,7 @@ class Collapsible extends Component {
   closeCollapsible() {
     this.setState({
       shouldSwitchAutoOnNextCycle: true,
-      height: this.refs.inner.offsetHeight,
+      height: this.innerReference.offsetHeight,
       transition: `height ${this.props.transitionTime}ms ${this.props.easing}`,
       inTransition: true,
     });
@@ -80,7 +80,7 @@ class Collapsible extends Component {
 
   continueOpenCollapsible() {
     this.setState({
-      height: this.refs.inner.offsetHeight,
+      height: this.innerReference.offsetHeight,
       transition: `height ${this.props.transitionTime}ms ${this.props.easing}`,
       isClosed: false,
       hasBeenOpened: true,
@@ -93,32 +93,18 @@ class Collapsible extends Component {
     event.preventDefault();
 
     if (this.props.triggerDisabled) {
-      return
+      return;
     }
 
     if (this.props.handleTriggerClick) {
       this.props.handleTriggerClick(this.props.accordionPosition);
+    } else if (this.state.isClosed === true) {
+      this.openCollapsible();
+      this.props.onOpening();
     } else {
-      if (this.state.isClosed === true) {
-        this.openCollapsible();
-        this.props.onOpening();
-      } else {
-        this.closeCollapsible();
-        this.props.onClosing();
-      }
+      this.closeCollapsible();
+      this.props.onClosing();
     }
-  }
-
-  renderNonClickableTriggerElement() {
-    if (this.props.triggerSibling && typeof this.props.triggerSibling === 'string') {
-      return (
-        <span className={`${this.props.classParentString}__trigger-sibling`}>{this.props.triggerSibling}</span>
-      )
-    } else if(this.props.triggerSibling) {
-      return <this.props.triggerSibling />
-    }
-
-    return null;
   }
 
   handleTransitionEnd() {
@@ -132,25 +118,35 @@ class Collapsible extends Component {
     }
   }
 
+  renderNonClickableTriggerElement() {
+    if (this.props.triggerSibling && typeof this.props.triggerSibling === 'string') {
+      return (
+        <span className={`${this.props.classParentString}__trigger-sibling`}>{this.props.triggerSibling}</span>
+      );
+    } else if (this.props.triggerSibling) {
+      return <this.props.triggerSibling />;
+    }
+
+    return null;
+  }
+
   render() {
-    var dropdownStyle = {
+    const dropdownStyle = {
       height: this.state.height,
       WebkitTransition: this.state.transition,
       msTransition: this.state.transition,
       transition: this.state.transition,
       overflow: this.state.overflow,
-    }
+    };
 
-    var openClass = this.state.isClosed ? 'is-closed' : 'is-open';
-    var disabledClass = this.props.triggerDisabled ? 'is-disabled' : '';
+    const openClass = this.state.isClosed ? 'is-closed' : 'is-open';
+    const disabledClass = this.props.triggerDisabled ? 'is-disabled' : '';
 
-    //If user wants different text when tray is open
-    var trigger = (this.state.isClosed === false) && (this.props.triggerWhenOpen !== undefined)
+    const trigger = (this.state.isClosed === false) && (this.props.triggerWhenOpen !== undefined)
                   ? this.props.triggerWhenOpen
                   : this.props.trigger;
 
-    // Don't render children until the first opening of the Collapsible if lazy rendering is enabled
-    var children = this.props.lazyRender
+    const children = this.props.lazyRender
       && !this.state.hasBeenOpened
       && this.state.isClosed
       && !this.state.inTransition ? null : this.props.children;
@@ -165,11 +161,13 @@ class Collapsible extends Component {
     const outerClassString = `${this.props.classParentString}__contentOuter ${this.props.contentOuterClassName}`;
     const innerClassString = `${this.props.classParentString}__contentInner ${this.props.contentInnerClassName}`;
 
-    return(
+    return (
       <div className={parentClassString.trim()}>
-        <span
+        <span //eslint-disable-line
           className={triggerClassString.trim()}
-          onClick={this.handleTriggerClick}>
+          onClick={this.handleTriggerClick}
+          role="button"
+        >
           {trigger}
         </span>
 
@@ -177,13 +175,14 @@ class Collapsible extends Component {
 
         <div
           className={outerClassString.trim()}
-          ref="outer"
+          ref={(c) => { this.outerReference = c; }}
+          // ref="outer"
           style={dropdownStyle}
           onTransitionEnd={this.handleTransitionEnd}
         >
           <div
             className={innerClassString.trim()}
-            ref="inner"
+            ref={(c) => { this.innerReference = c; }}
           >
             {children}
           </div>
@@ -203,17 +202,17 @@ Collapsible.propTypes = {
   triggerOpenedClassName: PropTypes.string,
   contentOuterClassName: PropTypes.string,
   contentInnerClassName: PropTypes.string,
-  accordionPosition: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  handleTriggerClick: PropTypes.func,
+  accordionPosition: PropTypes.oneOfType([PropTypes.string, PropTypes.number]), //eslint-disable-line
+  handleTriggerClick: PropTypes.func, //eslint-disable-line
   onOpen: PropTypes.func,
   onClose: PropTypes.func,
   onOpening: PropTypes.func,
   onClosing: PropTypes.func,
-  trigger: PropTypes.oneOfType([
+  trigger: PropTypes.oneOfType([ //eslint-disable-line
     PropTypes.string,
     PropTypes.element
   ]),
-  triggerWhenOpen:PropTypes.oneOfType([
+  triggerWhenOpen: PropTypes.oneOfType([ //eslint-disable-line
     PropTypes.string,
     PropTypes.element
   ]),
@@ -232,10 +231,10 @@ Collapsible.propTypes = {
     PropTypes.element,
     PropTypes.func,
   ]),
-}
+};
 
 Collapsible.defaultProps = {
-  transitionTime: 400,
+  transitionTime: 300,
   easing: 'linear',
   open: false,
   classParentString: 'Collapsible',
